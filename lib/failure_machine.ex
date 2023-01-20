@@ -37,7 +37,7 @@ defmodule FailureMachine do
   end
 
   def process_command(help: _) do
-    IO.puts("TODO: Implement help message")
+    IO.puts(IO.ANSI.red() <> "TODO: Add help output" <> IO.ANSI.reset())
   end
 
   def print_info(content) do
@@ -104,11 +104,12 @@ defmodule FailureMachine do
 
   def print_to_console(failure_group) do
     IO.puts("""
-    NUMBER OF FAILURES: #{failure_group.number_of_failures}
-    MESSAGES:
-    #{failure_group.messages}
-    WHERE:
+    #{IO.ANSI.blue()}#{IO.ANSI.bright()}NUMBER OF FAILURES:#{IO.ANSI.reset()} #{failure_group.number_of_failures}\n
+    #{IO.ANSI.blue()}#{IO.ANSI.bright()}MESSAGES:#{IO.ANSI.reset()}
+    #{IO.ANSI.red()}#{failure_group.messages}#{IO.ANSI.reset()}\n
+    #{IO.ANSI.blue()}#{IO.ANSI.bright()}WHERE:#{IO.ANSI.reset()}
     #{format(failure_group.where)}
+    #{IO.ANSI.blue()}#{IO.ANSI.bright()}----------------------------------#{IO.ANSI.reset()}
     """)
   end
 
