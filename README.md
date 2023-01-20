@@ -14,3 +14,12 @@ In summary, this is a work in progress.
 
 For now, the only way to use this is to clone this repo, run `mix install` and then `mix escript.build`
 
+## Usage
+
+The way this works is the following:
+
+```bash
+$ ./failure_machine --info [RSPEC LOG OUTPUT FILE]
+```
+
+Currently, `--info` is the only option correctly implemented and it requires you to give the RSpec output in json format.
