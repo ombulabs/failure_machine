@@ -22,4 +22,10 @@ The way this works is the following:
 $ ./failure_machine --info [RSPEC LOG OUTPUT FILE]
 ```
 
+if you have multiple files, like what you get from a CI run, the program accepts globbing:
+
+```bash
+$ ./failure_machine --info="name_of_files_glob_*.json"
+```
+
 Currently, `--info` is the only option correctly implemented and it requires you to give the RSpec output in json format.
