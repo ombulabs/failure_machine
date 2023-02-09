@@ -29,23 +29,23 @@ defmodule FailureMachine do
     end
   end
 
-  def process_command(info: file_name) do
-    case File.read(file_name) do
-      {:ok, content} -> print_info(content)
-      {:error, _} -> IO.puts("Unable to read file")
-    end
+  def process_command(info: path_string) do
+    file_read_results =
+      Path.wildcard(path_string)
+      |> Enum.map(&File.read/1)
+      |> Enum.group_by(fn file_read_result -> elem(file_read_result, 0) end)
+
+    file_read_results[:ok]
+    |> Enum.map(fn file_read_result -> elem(file_read_result, 1) end)
+    |> Enum.map(fn file_contents -> Poison.decode!(file_contents) end)
+    |> Enum.map(fn decoded_data -> extract_failures(decoded_data) end)
+    |> List.flatten()
+    |> classify()
+    |> print()
   end
 
   def process_command(help: _) do
     IO.puts(IO.ANSI.red() <> "TODO: Add help output" <> IO.ANSI.reset())
-  end
-
-  def print_info(content) do
-    content
-    |> Poison.decode!()
-    |> extract_failures()
-    |> classify()
-    |> print()
   end
 
   def extract_failures(test_run_data) do
@@ -69,26 +69,17 @@ defmodule FailureMachine do
 
   def create_failure_groups(failures) do
     failures
-    |> Enum.chunk_while([], &chunk_by_root_cause/2, &chunk_by_root_cause/1)
-    |> FailureGroup.from_failure_lists()
+    |> Enum.group_by(fn failure -> root_cause(failure) end)
+    |> FailureGroup.from_failures_map()
   end
 
-  def chunk_by_root_cause(failure, failure_group) do
-    last_failure = List.first(failure_group)
-
+  def root_cause(failure) do
     cond do
-      last_failure == nil || failure.exception["message"] == last_failure.exception["message"] ->
-        {:cont, [failure | failure_group]}
+      failure.exception == nil ->
+        failure.message
 
-      failure.exception["message"] != last_failure.exception["message"] ->
-        {:cont, Enum.reverse([failure | failure_group]), []}
-    end
-  end
-
-  def chunk_by_root_cause(failure_group) do
-    case failure_group do
-      [] -> {:cont, []}
-      remaining_failures -> {:cont, Enum.reverse(remaining_failures), []}
+      failure.exception != nil ->
+        failure.exception["message"]
     end
   end
 
