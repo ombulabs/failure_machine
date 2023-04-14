@@ -1,24 +1,33 @@
 defmodule FailureGroup do
   defstruct [:messages, where: [], number_of_failures: 0]
 
-  def from_failures_map(failures_map) do
-    failures_map
-    |> Enum.map(fn {message, failures} -> from_failures(message, failures) end)
+  def new_failure_group(message, failures) do
+    %FailureGroup{messages: message, number_of_failures: length(failures)}
   end
 
-  def from_failures(message, failures) do
-    failure_group = %FailureGroup{messages: message, number_of_failures: length(failures)}
-
+  def wrap_failures(failures) do
     failures
-    |> Enum.reduce(failure_group, fn failure, failure_group ->
-      add_failure(failure, failure_group)
+    |> Enum.group_by(fn failure -> root_cause(failure) end)
+    |> Enum.map(fn {message, failures} ->
+      message
+      |> new_failure_group(failures)
+      |> reduce_failures(failures)
     end)
   end
 
-  def add_failure(failure, failure_group) do
-    Map.merge(failure_group, %{
-      where: failure_group.where ++ ["#{failure.file_path}:#{failure.line_number}"]
-    })
+  defp root_cause(%{exception: nil, message: message}), do: message
+  defp root_cause(%{exception: _, exception: %{"message" => message}}), do: message
+
+  defp reduce_failures(failure_group, failures) do
+    Enum.reduce(failures, failure_group, &add_failure_to_group/2)
+  end
+
+  defp add_failure_to_group(failure, failure_group) do
+    put_in(
+      failure_group,
+      [Access.key(:where)],
+      ["#{failure.file_path}:#{failure.line_number}" | acc.where]
+    )
   end
 
   def compare(fg1, fg2) do
