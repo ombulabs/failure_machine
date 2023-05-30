@@ -13,79 +13,55 @@ defmodule FailureMachine do
 
   """
   def main(args) do
-    {parsed, _, invalid} =
-      args
-      |> OptionParser.parse(aliases: [h: :help], strict: [info: :string, help: :boolean])
-
-    case invalid do
-      [] ->
-        process_command(parsed)
-
-      [{"--info", nil}] ->
-        IO.puts("The --info option requires a path")
-
-      _ ->
-        IO.inspect(invalid)
+    args
+    |> parse_options()
+    |> case do
+      {parsed, _, []} -> process_command(parsed)
+      {_, _, [{"--info", nil}]} -> IO.puts("The --info option requires a path")
+      {_, _, invalid} -> IO.inspect(invalid)
     end
   end
 
-  def process_command(info: path_string) do
-    file_read_results =
-      Path.wildcard(path_string)
-      |> Enum.map(&File.read/1)
-      |> Enum.group_by(fn file_read_result -> elem(file_read_result, 0) end)
-
-    file_read_results[:ok]
-    |> Enum.map(fn file_read_result -> elem(file_read_result, 1) end)
-    |> Enum.map(fn file_contents -> Poison.decode!(file_contents) end)
-    |> Enum.map(fn decoded_data -> extract_failures(decoded_data) end)
-    |> List.flatten()
-    |> classify()
-    |> print()
+  defp parse_options(args) do
+    OptionParser.parse(args, aliases: [h: :help], strict: [info: :string, help: :boolean])
   end
 
   def process_command(help: _) do
     IO.puts(IO.ANSI.red() <> "TODO: Add help output" <> IO.ANSI.reset())
   end
 
-  def extract_failures(test_run_data) do
-    test_run_data["examples"]
-    |> Enum.map(fn elem -> atomize_keys(elem) end)
-    |> Enum.filter(fn example -> example[:status] == "failed" end)
-    |> Enum.map(fn elem -> struct(Failure, elem) end)
+  def process_command(info: path_string) do
+    path_string
+    |> Path.wildcard()
+    |> Enum.map(&File.read/1)
+    |> Enum.reduce([], fn
+      ({:ok, contents}, acc) -> [process_file_contents(contents)|acc]
+      (_, acc) -> acc
+    end)
+    |> List.flatten()
+    |> classify()
+    |> print()
   end
 
-  def atomize_keys(map) do
-    map
-    |> Enum.map(fn {k, v} -> {String.to_atom(k), v} end)
-    |> Map.new()
+  defp process_file_contents(contents) do
+    file_contents
+    |> Poison.decode!()
+    |> extract_failures()
+  end
+
+  defp extract_failures(%{"examples" => examples} = _all_file_content) do
+    examples
+    |> Enum.reduce([], fn
+      (%{"status" => "failed"} = example, acc) -> [new_failure(example)|acc]
+      (_, acc) -> acc
+    end)
   end
 
   def classify(failures) do
     failures
-    |> create_failure_groups()
-    |> order_descending()
-  end
-
-  def create_failure_groups(failures) do
-    failures
-    |> Enum.group_by(fn failure -> root_cause(failure) end)
-    |> FailureGroup.from_failures_map()
-  end
-
-  def root_cause(failure) do
-    cond do
-      failure.exception == nil ->
-        failure.message
-
-      failure.exception != nil ->
-        failure.exception["message"]
-    end
-  end
-
-  def order_descending(failure_groups) do
-    failure_groups
+    |> FailureGroup.wrap_failures()
     |> Enum.sort({:desc, FailureGroup})
+    |> order_descending()
   end
 
   def print(failure_groups) do
@@ -105,7 +81,6 @@ defmodule FailureMachine do
   end
 
   def format(file_paths) do
-    file_paths
-    |> Enum.reduce(List.first(file_paths), fn path, acc -> acc <> "\n#{path}" end)
+    Enum.reduce(file_paths, List.first(file_paths), fn path, acc -> acc <> "\n#{path}" end)
   end
 end
