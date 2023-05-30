@@ -29,3 +29,14 @@ $ ./failure_machine --info="name_of_files_glob_*.json"
 ```
 
 Currently, `--info` is the only option correctly implemented and it requires you to give the RSpec output in json format.
+
+## Testing
+
+We currently have no automated testing, so feel free to contribute.
+
+We have just a test file from a failed run in the rspec repo. It's also not ideal since we're not covering cases involving larger files and other error types, but it's good enough for sanity checks.
+
+Adding automated tests is the next priority, so stay tuned. If you have any ideas for testing automation or even json output files
+to add to increase the number of cases we cover, also, feel free to open a PR.
+
+To test, simply install the package and run it against the test data in the `test_data` folder and that's it.
