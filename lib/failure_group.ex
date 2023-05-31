@@ -7,16 +7,13 @@ defmodule FailureGroup do
 
   def wrap_failures(failures) do
     failures
-    |> Enum.group_by(fn failure -> root_cause(failure) end)
+    |> Enum.reduce(%{}, fn failure, acc -> Failure.sort_into(acc, failure) end)
     |> Enum.map(fn {message, failures} ->
       message
       |> new_failure_group(failures)
       |> reduce_failures(failures)
     end)
   end
-
-  defp root_cause(%{exception: nil, message: message}), do: message
-  defp root_cause(%{exception: _, exception: %{"message" => message}}), do: message
 
   defp reduce_failures(failure_group, failures) do
     Enum.reduce(failures, failure_group, &add_failure_to_group/2)
