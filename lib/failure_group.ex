@@ -26,7 +26,7 @@ defmodule FailureGroup do
     put_in(
       failure_group,
       [Access.key(:where)],
-      ["#{failure.file_path}:#{failure.line_number}" | acc.where]
+      ["#{failure.file_path}:#{failure.line_number}" | failure_group.where]
     )
   end
 

@@ -44,7 +44,7 @@ defmodule FailureMachine do
   end
 
   defp process_file_contents(contents) do
-    file_contents
+    contents
     |> Poison.decode!()
     |> extract_failures()
   end
@@ -52,7 +52,7 @@ defmodule FailureMachine do
   defp extract_failures(%{"examples" => examples} = _all_file_content) do
     examples
     |> Enum.reduce([], fn
-      (%{"status" => "failed"} = example, acc) -> [new_failure(example)|acc]
+      (%{"status" => "failed"} = example, acc) -> [Failure.new_failure(example)|acc]
       (_, acc) -> acc
     end)
   end
@@ -62,6 +62,11 @@ defmodule FailureMachine do
     |> FailureGroup.wrap_failures()
     |> Enum.sort({:desc, FailureGroup})
     |> order_descending()
+  end
+
+  def order_descending(failure_groups) do
+    failure_groups
+    |> Enum.sort({:desc, FailureGroup})
   end
 
   def print(failure_groups) do

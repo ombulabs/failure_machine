@@ -1,7 +1,7 @@
 defmodule Failure do
   defstruct [:description, :file_path, :line_number, :full_description, :id, :status, :exception]
 
-  def new_failure(%{"status" => "failed"} = example) do
+  def new_failure(%{"status" => "failed"} = elem) do
     struct(Failure, atomize_keys(elem))
   end
 
