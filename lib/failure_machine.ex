@@ -81,6 +81,6 @@ defmodule FailureMachine do
   end
 
   def format(file_paths) do
-    Enum.reduce(file_paths, List.first(file_paths), fn path, acc -> acc <> "\n#{path}" end)
+    Enum.reduce([], List.first(file_paths), fn path, acc -> acc <> "\n#{path}" end)
   end
 end
