@@ -18,12 +18,13 @@ defmodule FailureMachine do
     |> case do
       {parsed, _, []} -> process_command(parsed)
       {_, _, [{"--info", nil}]} -> IO.puts("The --info option requires a path")
+      {_, _, [{"--limit", nil}]} -> IO.puts("The --limit option requires a value")
       {_, _, invalid} -> IO.inspect(invalid)
     end
   end
 
   defp parse_options(args) do
-    OptionParser.parse(args, aliases: [h: :help], strict: [info: :string, help: :boolean])
+    OptionParser.parse(args, aliases: [h: :help], strict: [info: :string, help: :boolean, limit: :integer])
   end
 
   def process_command(help: _) do
@@ -31,6 +32,17 @@ defmodule FailureMachine do
   end
 
   def process_command(info: path_string) do
+    get_and_classify_errors(path_string)
+    |> print()
+  end
+
+  def process_command(info: path_string, limit: limit) do
+    get_and_classify_errors(path_string)
+    |> Enum.take(limit)
+    |> print()
+  end
+
+  def get_and_classify_errors(path_string) do
     path_string
     |> Path.wildcard()
     |> Enum.map(&File.read/1)
@@ -40,7 +52,6 @@ defmodule FailureMachine do
     end)
     |> List.flatten()
     |> classify()
-    |> print()
   end
 
   defp process_file_contents(contents) do
