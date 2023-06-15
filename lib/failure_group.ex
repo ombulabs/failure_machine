@@ -7,7 +7,6 @@ defmodule FailureGroup do
 
   def wrap_failures(failures) do
     failures
-    |> Enum.reduce(%{}, fn failure, acc -> Failure.sort_into(acc, failure) end)
     |> Enum.map(fn {message, failures} ->
       message
       |> new_failure_group(failures)

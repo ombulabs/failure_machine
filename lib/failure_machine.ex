@@ -70,6 +70,7 @@ defmodule FailureMachine do
 
   def classify(failures) do
     failures
+    |> Enum.reduce(%{}, fn failure, acc -> Failure.sort_into(acc, failure) end)
     |> FailureGroup.wrap_failures()
     |> Enum.sort({:desc, FailureGroup})
     |> order_descending()
