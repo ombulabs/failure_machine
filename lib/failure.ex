@@ -17,7 +17,7 @@ defmodule Failure do
     failure_message =
       Map.keys(map)
       |> Enum.find(Failure.message(failure), fn message ->
-        String.jaro_distance(message, Failure.message(failure)) > 0.8
+        Failure.message(failure) == message
       end)
 
     Map.update(map, failure_message, [failure], fn failure_list -> failure_list ++ [failure] end)
