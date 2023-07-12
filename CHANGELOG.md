@@ -1,6 +1,5 @@
 # main [unreleased](https://github.com/mateusdeap/failure_machine/compare/v0.1.0...main)
 
-- [FEATURE: Compare strings using jaro distance](https://github.com/mateusdeap/failure_machine/pull/5)
 - [CHORE: Add CHANGELOG.md](https://github.com/mateusdeap/failure_machine/pull/5)
 - [CHORE: Fast Refactor](https://github.com/mateusdeap/failure_machine/pull/4)
 - [FEATURE: Add `--limit` option](https://github.com/mateusdeap/failure_machine/pull/9)
