@@ -27,3 +27,4 @@ failure_machine-*.tar
 
 test_run.json
 failure_machine
+!lib/failure_machine/
