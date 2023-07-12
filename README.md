@@ -28,7 +28,19 @@ if you have multiple files, like what you get from a CI run, the program accepts
 $ ./failure_machine --info="name_of_files_glob_*.json"
 ```
 
-Currently, `--info` is the only option correctly implemented and it requires you to give the RSpec output in json format.
+Aditionally, you have 2 other options: `--limi` and `--by-file`.
+
+With `--limit` you can say how much output you want to see, by saying:
+
+```bash
+$ ./failure_machine --info="name_of_files_glob_*.json" --limit 10
+```
+
+And you can classify the output by file rather than by failure. Useful if you want to have more of an idea of where are most failures rather than what are most failures:
+
+```bash
+$ ./failure_machine --info="name_of_files_glob_*.json" --by-file
+```
 
 ## Testing
 
