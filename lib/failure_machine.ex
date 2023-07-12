@@ -27,7 +27,16 @@ defmodule FailureMachine do
   end
 
   defp parse_options(args) do
-    OptionParser.parse(args, aliases: [h: :help], strict: [info: :string, help: :boolean, limit: :integer])
+    OptionParser.parse(
+      args,
+      aliases: [h: :help],
+      strict: [
+        info: :string,
+        help: :boolean,
+        limit: :integer,
+        by_file: :boolean
+      ]
+    )
   end
 
   def process_command(help: _) do
@@ -45,6 +54,21 @@ defmodule FailureMachine do
     path_string
     |> get_failures()
     |> Classifier.classify()
+    |> Enum.take(limit)
+    |> print()
+  end
+
+  def process_command(info: path_string, by_file: by_file) do
+    path_string
+    |> get_failures()
+    |> Classifier.classify(by_file)
+    |> print()
+  end
+
+  def process_command(info: path_string, by_file: by_file, limit: limit) do
+    path_string
+    |> get_failures()
+    |> Classifier.classify(by_file)
     |> Enum.take(limit)
     |> print()
   end

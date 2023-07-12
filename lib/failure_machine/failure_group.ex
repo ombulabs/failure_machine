@@ -5,11 +5,24 @@ defmodule FailureMachine.FailureGroup do
     %FailureMachine.FailureGroup{messages: message, number_of_failures: length(failures)}
   end
 
+  def new_failure_group(_file, failures, _by_file) do
+    %FailureMachine.FailureGroup{number_of_failures: length(failures)}
+  end
+
   def wrap_failures(failures) do
     failures
     |> Enum.map(fn {message, failures} ->
       message
       |> new_failure_group(failures)
+      |> reduce_failures(failures)
+    end)
+  end
+
+  def wrap_failures(failures, by_file) do
+    failures
+    |> Enum.map(fn {file, failures} ->
+      file
+      |> new_failure_group(failures, by_file)
       |> reduce_failures(failures)
     end)
   end
