@@ -1,8 +1,8 @@
-defmodule FailureGroup do
+defmodule FailureMachine.FailureGroup do
   defstruct [:messages, where: [], number_of_failures: 0]
 
   def new_failure_group(message, failures) do
-    %FailureGroup{messages: message, number_of_failures: length(failures)}
+    %FailureMachine.FailureGroup{messages: message, number_of_failures: length(failures)}
   end
 
   def wrap_failures(failures) do

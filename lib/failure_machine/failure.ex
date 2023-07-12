@@ -1,4 +1,4 @@
-defmodule Failure do
+defmodule FailureMachine.Failure do
   defstruct [:description, :file_path, :line_number, :full_description, :id, :status, :exception]
 
   def new_failure(%{"status" => "failed"} = elem) do

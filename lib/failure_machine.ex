@@ -3,6 +3,9 @@ defmodule FailureMachine do
   Documentation for `FailureMachine`.
   """
 
+  alias FailureMachine.Classifier
+  alias FailureMachine.Failure
+
   @doc """
   Hello world.
 
@@ -32,18 +35,22 @@ defmodule FailureMachine do
   end
 
   def process_command(info: path_string) do
-    get_and_classify_errors(path_string)
+    path_string
+    |> get_failures()
+    |> Classifier.classify()
     |> print()
   end
 
   def process_command(info: path_string, limit: limit) do
-    get_and_classify_errors(path_string)
+    path_string
+    |> get_failures()
+    |> Classifier.classify()
     |> Enum.take(limit)
     |> print()
   end
 
-  def get_and_classify_errors(path_string) do
-    path_string
+  def get_failures(file_path) do
+    file_path
     |> Path.wildcard()
     |> Enum.map(&File.read/1)
     |> Enum.reduce([], fn
@@ -51,7 +58,6 @@ defmodule FailureMachine do
       (_, acc) -> acc
     end)
     |> List.flatten()
-    |> classify()
   end
 
   defp process_file_contents(contents) do
@@ -59,26 +65,13 @@ defmodule FailureMachine do
     |> Poison.decode!()
     |> extract_failures()
   end
-
+  
   defp extract_failures(%{"examples" => examples} = _all_file_content) do
     examples
     |> Enum.reduce([], fn
       (%{"status" => "failed"} = example, acc) -> [Failure.new_failure(example)|acc]
       (_, acc) -> acc
     end)
-  end
-
-  def classify(failures) do
-    failures
-    |> Enum.reduce(%{}, fn failure, acc -> Failure.sort_into(acc, failure) end)
-    |> FailureGroup.wrap_failures()
-    |> Enum.sort({:desc, FailureGroup})
-    |> order_descending()
-  end
-
-  def order_descending(failure_groups) do
-    failure_groups
-    |> Enum.sort({:desc, FailureGroup})
   end
 
   def print(failure_groups) do
