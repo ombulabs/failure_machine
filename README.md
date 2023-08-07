@@ -12,7 +12,7 @@ In summary, this is a work in progress.
 
 ## Installation
 
-For now, the only way to use this is to clone this repo, run `mix install` and then `mix escript.build`
+For now, the only way to use this is to clone this repo, run `mix deps.get` and then `mix escript.build`
 
 ## Usage
 
@@ -28,7 +28,7 @@ if you have multiple files, like what you get from a CI run, the program accepts
 $ ./failure_machine --info="name_of_files_glob_*.json"
 ```
 
-Aditionally, you have 2 other options: `--limi` and `--by-file`.
+Aditionally, you have 2 other options: `--limit` and `--by-file`.
 
 With `--limit` you can say how much output you want to see, by saying:
 

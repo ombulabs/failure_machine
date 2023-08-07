@@ -107,7 +107,7 @@ defmodule FailureMachine do
     IO.puts("""
     #{IO.ANSI.blue()}#{IO.ANSI.bright()}NUMBER OF FAILURES:#{IO.ANSI.reset()} #{failure_group.number_of_failures}\n
     #{IO.ANSI.blue()}#{IO.ANSI.bright()}MESSAGES:#{IO.ANSI.reset()}
-    #{IO.ANSI.red()}#{failure_group.messages}#{IO.ANSI.reset()}\n
+    #{IO.ANSI.red()}#{format(failure_group.messages)}#{IO.ANSI.reset()}\n
     #{IO.ANSI.blue()}#{IO.ANSI.bright()}WHERE:#{IO.ANSI.reset()}
     #{format(failure_group.where)}
     #{IO.ANSI.blue()}#{IO.ANSI.bright()}----------------------------------#{IO.ANSI.reset()}
