@@ -2,6 +2,7 @@ defmodule FailureMachine do
   @moduledoc """
   Documentation for `FailureMachine`.
   """
+  import SweetXml
 
   alias FailureMachine.Classifier
   alias FailureMachine.Failure
@@ -84,18 +85,81 @@ defmodule FailureMachine do
     |> List.flatten()
   end
 
-  defp process_file_contents(contents) do
+  def process_file_contents(contents) do
     contents
-    |> Poison.decode!()
-    |> extract_failures()
+    |> decode()
   end
-  
-  defp extract_failures(%{"examples" => examples} = _all_file_content) do
-    examples
-    |> Enum.reduce([], fn
-      (%{"status" => "failed"} = example, acc) -> [Failure.new_failure(example)|acc]
-      (_, acc) -> acc
-    end)
+  def decode(content) do
+    <<first_char, _::binary>> = content
+
+    case first_char do
+      ?{ ->
+        parse_json(content)
+
+      ?< ->
+        parse_junit(content)
+    end
+  end
+
+  def parse_json(content) do
+    decoded_content = Poison.decode!(content)
+
+    failures =
+      decoded_content["examples"]
+      |> Enum.filter(fn example -> Map.has_key?(example, "exception") end)
+      |> Enum.map(fn failure -> Map.take(failure, ["exception", "file_path", "line_number"]) end)
+      |> Enum.map(fn failure ->
+        %{
+          message: failure["exception"]["message"],
+          file: "#{failure["file_path"]}:#{failure["line_number"]}"
+        }
+      end)
+
+    %FailureMachine.Examples{
+      failures: failures,
+      summary: %{
+        examples: decoded_content["summary"]["example_count"],
+        failures: decoded_content["summary"]["failure_count"],
+        pending: decoded_content["summary"]["pending_count"]
+      }
+    }
+  end
+
+  def parse_junit(content) do
+    decoded_content = decode_xml(content)
+
+    failures =
+      Enum.map(decoded_content[:failures], fn failure ->
+        %{
+          message: List.to_string(failure[:message]),
+          file: List.to_string(failure[:file])
+        }
+      end)
+
+    summary =
+      Enum.map(decoded_content[:summary], fn {key, value} -> {key, List.to_integer(value)} end)
+      |> Map.new()
+
+    failure_examples = Map.merge(decoded_content, %{failures: failures, summary: summary})
+
+    %FailureMachine.Examples{
+      failures: failure_examples[:failures],
+      summary: failure_examples[:summary]
+    }
+  end
+
+  def decode_xml(content) do
+    content
+    |> xpath(
+      ~x"/testsuite"e,
+      failures: [~x"./testcase[failure]"l, file: ~x"./@file", message: ~x"./failure/text()"],
+      summary: [
+        ~x"/testsuite"e,
+        examples: ~x"./@tests",
+        failures: ~x"./@failures",
+        pending: ~x"./@skipped"
+      ]
+    )
   end
 
   def print(failure_groups) do

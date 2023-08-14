@@ -29,3 +29,4 @@ test_run.json
 failure_machine
 .DS_Store
 !lib/failure_machine/
+real_test_data/

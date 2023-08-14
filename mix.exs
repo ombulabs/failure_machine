@@ -23,7 +23,8 @@ defmodule FailureMachine.MixProject do
   defp deps do
     [
       {:poison, "~> 5.0.0"},
-      {:ex_doc, "~> 0.29.1", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.29.1", only: :dev, runtime: false},
+      {:sweet_xml, "~> 0.7.1"}
     ]
   end
 end
