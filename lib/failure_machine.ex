@@ -5,7 +5,6 @@ defmodule FailureMachine do
   import SweetXml
 
   alias FailureMachine.Classifier
-  alias FailureMachine.Failure
 
   @doc """
   Hello world.
@@ -55,23 +54,34 @@ defmodule FailureMachine do
     path_string
     |> get_failures()
     |> Classifier.classify()
-    |> Enum.take(limit)
+    |> take(limit)
     |> print()
   end
 
-  def process_command(info: path_string, by_file: by_file) do
+  def process_command(info: path_string, by_file: _by_file) do
     path_string
     |> get_failures()
-    |> Classifier.classify(by_file)
+    |> Classifier.classify_by_file()
     |> print()
   end
 
-  def process_command(info: path_string, by_file: by_file, limit: limit) do
+  def process_command(info: path_string, by_file: _by_file, limit: limit) do
     path_string
     |> get_failures()
-    |> Classifier.classify(by_file)
-    |> Enum.take(limit)
+    |> Classifier.classify_by_file()
+    |> take(limit)
     |> print()
+  end
+
+  def take(examples, limit) do
+    failures =
+      examples.failures
+      |> Enum.take(limit)
+
+    %FailureMachine.Examples{
+      failures: failures,
+      summary: examples.summary
+    }
   end
 
   def get_failures(file_path) do
@@ -79,16 +89,29 @@ defmodule FailureMachine do
     |> Path.wildcard()
     |> Enum.map(&File.read/1)
     |> Enum.reduce([], fn
-      ({:ok, contents}, acc) -> [process_file_contents(contents)|acc]
-      (_, acc) -> acc
+      {:ok, content}, acc -> [process_file_contents(content) | acc]
+      _, acc -> acc
     end)
-    |> List.flatten()
+    |> Enum.reject(fn examples -> examples.failures == [] end)
+    |> Enum.reduce(fn examples, acc -> FailureMachine.merge_examples(acc, examples) end)
   end
 
   def process_file_contents(contents) do
     contents
     |> decode()
   end
+
+  def merge_examples(examples, other_examples) do
+    %FailureMachine.Examples{
+      failures: examples.failures ++ other_examples.failures,
+      summary: %{
+        examples: examples.summary[:examples] + other_examples.summary[:examples],
+        failures: examples.summary[:failures] + other_examples.summary[:failures],
+        pending: examples.summary[:pending] + other_examples.summary[:pending]
+      }
+    }
+  end
+
   def decode(content) do
     <<first_char, _::binary>> = content
 
@@ -162,23 +185,34 @@ defmodule FailureMachine do
     )
   end
 
-  def print(failure_groups) do
-    failure_groups
-    |> Enum.each(fn fg -> print_to_console(fg) end)
+  def print(examples) do
+    examples.failures
+    |> Enum.each(fn failures -> print_to_console(failures) end)
+
+    print_summary(examples.summary)
   end
 
-  def print_to_console(failure_group) do
+  def print_to_console(failures) do
     IO.puts("""
-    #{IO.ANSI.blue()}#{IO.ANSI.bright()}NUMBER OF FAILURES:#{IO.ANSI.reset()} #{failure_group.number_of_failures}\n
+    #{IO.ANSI.blue()}#{IO.ANSI.bright()}NUMBER OF FAILURES:#{IO.ANSI.reset()} #{length(failures[:messages])}\n
     #{IO.ANSI.blue()}#{IO.ANSI.bright()}MESSAGES:#{IO.ANSI.reset()}
-    #{IO.ANSI.red()}#{format(failure_group.messages)}#{IO.ANSI.reset()}\n
+    #{IO.ANSI.red()}#{format(failures[:messages])}#{IO.ANSI.reset()}\n
     #{IO.ANSI.blue()}#{IO.ANSI.bright()}WHERE:#{IO.ANSI.reset()}
-    #{format(failure_group.where)}
+    #{format(failures[:files])}
     #{IO.ANSI.blue()}#{IO.ANSI.bright()}----------------------------------#{IO.ANSI.reset()}
     """)
   end
 
-  def format(file_paths) do
-    Enum.join(file_paths, "\n")
+  def print_summary(summary) do
+    IO.puts("""
+      #{IO.ANSI.yellow()}#{IO.ANSI.bright()}SUMMARY:#{IO.ANSI.reset()}\n\n
+      #{IO.ANSI.blue()}#{IO.ANSI.bright()}EXAMPLES:#{IO.ANSI.reset()} #{summary[:examples]}\n
+      #{IO.ANSI.blue()}#{IO.ANSI.bright()}FAILURES:#{IO.ANSI.reset()} #{summary[:failures]}\n
+      #{IO.ANSI.blue()}#{IO.ANSI.bright()}PENDING:#{IO.ANSI.reset()} #{summary[:pending]}\n
+    """)
+  end
+
+  def format(strings) do
+    Enum.join(strings, "\n")
   end
 end

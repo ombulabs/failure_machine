@@ -1,25 +1,72 @@
 defmodule FailureMachine.Classifier do
-	alias FailureMachine.Failure
-	alias FailureMachine.FailureGroup
+  def classify(examples) do
+    classified_failures =
+      examples.failures
+      |> Enum.group_by(fn failure -> failure[:message] end)
+      |> order_descending()
+      |> Keyword.values()
+      |> Enum.map(fn failures ->
+        Enum.reduce(failures, %{messages: [], files: []}, fn failure, acc ->
+          messages = [failure[:message] | acc[:messages]]
 
-  def classify(failures) do
-    failures
-    |> Enum.reduce(%{}, fn failure, acc -> Failure.sort_into(acc, failure) end)
-    |> FailureGroup.wrap_failures()
-    |> Enum.sort({:desc, FailureGroup})
-    |> order_descending()
+          files =
+            if List.last(acc[:files]) != failure[:file] do
+              [failure[:file] | acc[:files]]
+            else
+              acc[:files]
+            end
+
+          %{
+            messages: messages,
+            files: files
+          }
+        end)
+      end)
+
+    %FailureMachine.Examples{
+      failures: classified_failures,
+      summary: examples.summary
+    }
   end
 
-  def classify(failures, by_file) do
-    failures
-    |> Enum.reduce(%{}, fn failure, acc -> Map.update(acc, failure.file_path, [failure], fn failure_list -> failure_list ++ [failure] end) end)
-    |> FailureGroup.wrap_failures(by_file)
-    |> Enum.sort({:desc, FailureGroup})
-    |> order_descending()
+  def classify_by_file(examples) do
+    classified_failures =
+      examples.failures
+      |> Enum.group_by(fn failure ->
+        failure[:file]
+        |> String.split(":", trim: true)
+        |> List.first()
+      end)
+      |> order_descending()
+      |> Keyword.values()
+      |> Enum.map(fn failures ->
+        Enum.reduce(failures, %{messages: [], files: []}, fn failure, acc ->
+          messages = [failure[:message] | acc[:messages]]
+
+          files =
+            if List.last(acc[:files]) != failure[:file] do
+              [failure[:file] | acc[:files]]
+            else
+              acc[:files]
+            end
+
+          %{
+            messages: messages,
+            files: files
+          }
+        end)
+      end)
+
+    %FailureMachine.Examples{
+      failures: classified_failures,
+      summary: examples.summary
+    }
   end
 
   def order_descending(failure_groups) do
     failure_groups
-    |> Enum.sort({:desc, FailureGroup})
+    |> Enum.sort(fn examples1, examples2 ->
+      length(elem(examples1, 1)) >= length(elem(examples2, 1))
+    end)
   end
 end
