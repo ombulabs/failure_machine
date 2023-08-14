@@ -1,6 +1,8 @@
 # main [unreleased](https://github.com/mateusdeap/failure_machine/compare/v0.1.0...main)
 
 - [FEATURE: Add ability to parse junit xml](https://github.com/mateusdeap/failure_machine/pull/12)
+- [CHORE: Refactor to use one single structure for data](https://github.com/mateusdeap/failure_machine/pull/13)
+- [FEATURE: Add summary to the end of the output](https://github.com/mateusdeap/failure_machine/pull/13)
 
 # v0.2.0 / 2023-07-12 [commits](https://github.com/mateusdeap/failure_machine/compare/v0.1.0...v0.2.0)
 
